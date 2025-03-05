@@ -90,7 +90,10 @@ if [ -z "$IDP_APP_CLIENT_SECRET" ]; then
   gen_key_pairs
 fi
 
-TOKEN=$(gcloud auth print-access-token)
+if [ -z "$TOKEN" ]; then
+  TOKEN=$(gcloud auth print-access-token)
+fi
+
 APP_NAME=authz-idp-acccess-tokens-sample-app
 
 echo "Installing apigeecli"
@@ -104,7 +107,7 @@ echo "Deploying Apigee artifacts..."
 
 mkdir rendered
 cp -r ./sharedflowbundle ./rendered
-sed -i "s/REPLACEWITHIDPCLIENTIDCLAIM/$TOKEN_CLIENT_ID_CLAIM/g" ./rendered/sharedflowbundle/policies/VK-IdentifyClientApp.xml
+sed -i "s/REPLACEWITHIDPCLIENTIDCLAIM/$TOKEN_CLIENT_ID_CLAIM/g" ./rendered/sharedflowbundle/policies/VA-IdentifyClientApp.xml
 if [ -n "$PR_KEY" ]; then
   echo "Deploying public and private keys for mock oidc..."
   echo -e "jwk=$JWK\nprivate_key=$PR_KEY" >mock_configuration.properties
@@ -112,7 +115,7 @@ if [ -n "$PR_KEY" ]; then
 fi
 
 echo "Importing and Deploying Apigee authorize-idp-access-tokens sharedflow..."
-REV_SF=$(apigeecli sharedflows create -f ./rendered/sharedflowbundle -n authorize-idp-access-tokens --org "$PROJECT" --token "$TOKEN" --disable-check | jq ."revision" -r)
+REV_SF=$(apigeecli sharedflows create bundle -f ./rendered/sharedflowbundle -n authorize-idp-access-tokens --org "$PROJECT" --token "$TOKEN" --disable-check | jq ."revision" -r)
 apigeecli sharedflows deploy --name authorize-idp-access-tokens --ovr --rev "$REV_SF" --org "$PROJECT" --env "$APIGEE_ENV" --token "$TOKEN"
 rm -r ./rendered
 
@@ -121,7 +124,7 @@ REV=$(apigeecli apis create bundle -f ./apiproxy -n sample-authorize-idp-access-
 apigeecli apis deploy --wait --name sample-authorize-idp-access-tokens --ovr --rev "$REV" --org "$PROJECT" --env "$APIGEE_ENV" --token "$TOKEN"
 
 echo "Creating API Product"
-apigeecli products create --name authz-idp-acccess-tokens-sample-product --displayname "authz-idp-acccess-tokens-sample-product" --envs "$APIGEE_ENV" --scopes "READ" --scopes "WRITE" --scopes "ACTION" --approval auto --quota 50 --interval 1 --unit minute --opgrp ./apiproduct-opgroup.json --org "$PROJECT" --token "$TOKEN"
+apigeecli products create --name authz-idp-acccess-tokens-sample-product --display-name "authz-idp-acccess-tokens-sample-product" --envs "$APIGEE_ENV" --scopes "READ" --scopes "WRITE" --scopes "ACTION" --approval auto --quota 50 --interval 1 --unit minute --opgrp ./apiproduct-opgroup.json --org "$PROJECT" --token "$TOKEN"
 
 echo "Creating Developer"
 apigeecli developers create --user testuser --email authz-idp-acccess-tokens_apigeesamples@acme.com --first Test --last User --org "$PROJECT" --token "$TOKEN"
