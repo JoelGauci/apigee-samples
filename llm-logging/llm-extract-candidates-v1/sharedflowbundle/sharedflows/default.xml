@@ -14,8 +14,9 @@
 <SharedFlow name="default">
   <Step>
     <Name>EV-ExtractCandidateContents</Name>
+    <Condition>response.content != null</Condition>
   </Step>
   <Step>
-    <Name>AM-SetCandidaContents</Name>
+    <Name>AM-SetCandidateContents</Name>
   </Step>
 </SharedFlow>
